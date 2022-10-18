@@ -134,3 +134,6 @@ dmypy.json
 # MNIST data
 /data
 
+# wandb
+/wandb
+
