@@ -1,0 +1,71 @@
+wandb_version: 1
+
+Batch_size:
+  desc: null
+  value: 128
+D Betas:
+  desc: null
+  value:
+  - 0.5
+  - 0.9
+Epochs:
+  desc: null
+  value: 100
+G Betas:
+  desc: null
+  value:
+  - 0.5
+  - 0.9
+Learning_rates (D, G):
+  desc: null
+  value:
+  - 1.0e-05
+  - 1.0e-05
+Loss function:
+  desc: null
+  value: Binary Cross Entropy
+Note:
+  desc: null
+  value: '''Mode collapse'' fixed w. normalization in seems to keep happening.'
+Nr. train data points:
+  desc: null
+  value: 5949
+One sided label smoothing:
+  desc: null
+  value: 1->1*(1-0.15)and 0->0.0+0.15
+Optimizer:
+  desc: null
+  value: Adam
+Weight_decays (D, G):
+  desc: null
+  value:
+  - 0.0
+  - 0.0
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.13.4
+    framework: torch
+    is_jupyter_run: true
+    is_kaggle_kernel: false
+    python_version: 3.10.6
+    start_time: 1666126300.510714
+    t:
+      1:
+      - 1
+      - 41
+      - 55
+      2:
+      - 1
+      - 41
+      - 55
+      3:
+      - 1
+      - 16
+      - 23
+      4: 3.10.6
+      5: 0.13.4
+      8:
+      - 1
+      - 4
+      - 5

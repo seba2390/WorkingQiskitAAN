@@ -1,0 +1,21 @@
+{
+    "os": "macOS-12.5-arm64-arm-64bit",
+    "python": "3.10.6",
+    "heartbeatAt": "2022-10-18T20:51:41.471951",
+    "startedAt": "2022-10-18T20:51:40.499411",
+    "docker": null,
+    "cpu_count": 8,
+    "cuda": null,
+    "args": null,
+    "state": "running",
+    "program": "main.ipynb",
+    "root": "/Users/sebastianyde/Library/CloudStorage/OneDrive-AarhusUniversitet/Div. Github projekter/WorkingQiskitAAN",
+    "git": {
+        "remote": "git@github.com:seba2390/WorkingQiskitAAN.git",
+        "commit": "609f87112d48c0f904aa49c456650ddf94385e97"
+    },
+    "email": "madsen3008@gmail.com",
+    "host": "MacBook-Pro-tilhrende-Sebastian.local",
+    "username": "sebastianyde",
+    "executable": "/Users/sebastianyde/miniforge3/bin/python3.10"
+}

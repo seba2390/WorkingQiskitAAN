@@ -15,17 +15,17 @@ class Generator(torch.nn.Module):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         #self.device = torch.device("cpu")
         
-        # latent size => 128*3*3 (1152)
+        # latent size => 11*3*3
         self.fc = torch.nn.Sequential(
             torch.nn.Linear(in_features=latent_dims,
                             out_features=11*3*3),
             torch.nn.BatchNorm1d(num_features=11*3*3),
             torch.nn.LeakyReLU(negative_slope=0.01))
 
-        # 128*3*3 (1152) => 128 x 3 x 3
+        # 11*3*3  => 11 x 3 x 3
         self.reshape = Reshape(11, 3, 3)
 
-        # 128 x 3 x 3 => 64 x 7 x 7
+        # 11 x 3 x 3 => 64 x 7 x 7
         self.conv1 = torch.nn.Sequential(
             torch.nn.ConvTranspose2d(in_channels=11, out_channels=64, kernel_size=(5, 5),
                                      stride=(2, 2), padding=(1, 1), bias=False),
