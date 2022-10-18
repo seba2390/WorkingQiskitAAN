@@ -88,12 +88,7 @@ class GenerativeAdversarialNetwork(torch.nn.Module):
                                _shots=_NR_SHOTS,
                                _all_2_all=_ALL_2_ALL,
                                _use_rows=_USE_ROWS)
-            global counter
-            counter = 0
-            def my_callback(params):
-                global counter
-                counter += 1
-                print("Iteration: ", counter, "/", _I_MAX)
+
             my_result = scipy.optimize.minimize(fun=my_cost, x0=_THETA_INIT, 
                                                 method="COBYLA", options = {'maxiter': _I_MAX})
             _THETA_INIT = my_result['x']
