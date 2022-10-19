@@ -167,13 +167,13 @@ class GenerativeAdversarialNetwork(torch.nn.Module):
 
             # Save images and log to wandb
             with torch.no_grad():
-                nr_images = 4  # Choose a number w. integer square root
+                nr_images = 64  # Choose a number w. integer square root
                 if save_images:
                     if (epoch + 1) % 1 == 0:
                         self.generator.eval()
 
                         latent_vectors = sample_qcirc(params=self._THETA_INIT,
-                                                      _nr_samples=dataloader.batch_size,
+                                                      _nr_samples=nr_images,
                                                       _nr_qubits=self.latent_dims,
                                                       _layer_depth=self._L_DEPTH,
                                                       _all_2_all=True,
@@ -188,7 +188,7 @@ class GenerativeAdversarialNetwork(torch.nn.Module):
                         if (epoch + 1) % 1 == 0:
                             self.generator.eval()
                             latent_vectors = sample_qcirc(params=self._THETA_INIT,
-                                                          _nr_samples=dataloader.batch_size,
+                                                          _nr_samples=nr_images,
                                                           _nr_qubits=self.latent_dims,
                                                           _layer_depth=self._L_DEPTH,
                                                           _all_2_all=True,
