@@ -16,20 +16,31 @@ class GenerativeAdversarialNetwork(torch.nn.Module):
     def __init__(self, latent_size: int = 35):
         super(GenerativeAdversarialNetwork, self).__init__()
 
-        #torch.manual_seed(0)  # For reproducibility
+        # torch.manual_seed(0)  # For reproducibility
 
         self.latent_dims = latent_size
         self.image_dims = (28, 28)
 
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        #self.device = torch.device("cpu")
-
+        # self.device = torch.device("cpu")
         print("Using device: ", self.device)
 
         self.discriminator = Discriminator(image_dims=self.image_dims, latent_dim=self.latent_dims)
         self.generator = Generator(image_dims=self.image_dims, latent_dims=self.latent_dims)
         self.discriminator.to(self.device)
         self.generator.to(self.device)
+
+        self._N_QUBITS = self.latent_dims
+        self._L_DEPTH = 2
+        self._NR_SHOTS = 2000
+        self._ALL_2_ALL = True
+        self._USE_ROWS = False
+        self._I_MAX = 5
+        if self._ALL_2_ALL:
+            _NR_PARAMS = int(self._L_DEPTH * (2 * self._N_QUBITS + self._N_QUBITS * (self._N_QUBITS - 1) / 2))
+        else:
+            _NR_PARAMS = int(self._L_DEPTH * (2 * self._N_QUBITS + self._N_QUBITS - 1))
+        self._THETA_INIT = torch.randn(size=(_NR_PARAMS,)).tolist()
 
     # To save images in grid layout
     @staticmethod
@@ -47,8 +58,7 @@ class GenerativeAdversarialNetwork(torch.nn.Module):
     def train_network(self, dataloader, lrs: tuple[float, float] = (0.001, 0.001),
                       wds: tuple[float, float] = (0.000, 0.000), epochs: int = 100,
                       betas: tuple[tuple[float, float], tuple[float, float]] = ((0.9, 0.999), (0.9, 0.999)),
-                      use_bernoulli: bool = True, save_images: bool = False, use_wandb: bool = False,
-                      label_smooth: float = 0.0):
+                      save_images: bool = False, use_wandb: bool = False, label_smooth: float = 0.0):
 
         # Real and fake labels
         real_targets = torch.ones(dataloader.batch_size, 1, device=self.device) * (1 - label_smooth)
@@ -60,39 +70,25 @@ class GenerativeAdversarialNetwork(torch.nn.Module):
                                        weight_decay=wds[0], betas=betas[0])
         g_optimizer = torch.optim.Adam(self.generator.parameters(), lr=lrs[1],
                                        weight_decay=wds[1], betas=betas[1])
-        
-        _N_QUBITS=self.latent_dims
-        _L_DEPTH =2
-        _NR_SHOTS = 2000
-        _ALL_2_ALL = True
-        _USE_ROWS = False
-        _I_MAX = 30
-        if _ALL_2_ALL:
-            _NR_PARAMS = int(_L_DEPTH*(2*_N_QUBITS+ _N_QUBITS * (_N_QUBITS - 1) / 2))
-        else:
-            _NR_PARAMS = int(_L_DEPTH*(2*_N_QUBITS+ _N_QUBITS - 1))
-        _THETA_INIT = torch.randn(size=(_NR_PARAMS,)).tolist()
 
-            
-        
         # Training loop
         disc_losses, gen_losses = [], []
         for epoch in tqdm(range(epochs)):
             d_losses = []
             g_losses = []
-            
+
             weights = torch.bernoulli(torch.abs(self.discriminator.fc1[0].weight))
             my_cost = get_cost(X_train=weights,
-                               _nr_qubits=_N_QUBITS,
-                               _layer_depth=_L_DEPTH,
-                               _shots=_NR_SHOTS,
-                               _all_2_all=_ALL_2_ALL,
-                               _use_rows=_USE_ROWS)
+                               _nr_qubits=self._N_QUBITS,
+                               _layer_depth=self._L_DEPTH,
+                               _shots=self._NR_SHOTS,
+                               _all_2_all=self._ALL_2_ALL,
+                               _use_rows=self._USE_ROWS)
 
-            my_result = scipy.optimize.minimize(fun=my_cost, x0=_THETA_INIT, 
-                                                method="COBYLA", options = {'maxiter': _I_MAX})
-            _THETA_INIT = my_result['x']
-            
+            my_result = scipy.optimize.minimize(fun=my_cost, x0=self._THETA_INIT,
+                                                method="COBYLA", options={'maxiter': self._I_MAX})
+            self._THETA_INIT = my_result['x']
+
             for images, labels in dataloader:
                 images = images.to(self.device)
                 # ================================ #
@@ -107,12 +103,12 @@ class GenerativeAdversarialNetwork(torch.nn.Module):
                 # Generate images in eval mode
                 self.generator.eval()
                 with torch.no_grad():
-                    latent_vectors = sample_qcirc(params = _THETA_INIT,
-                                                 _nr_samples = dataloader.batch_size,
-                                                 _nr_qubits  = self.latent_dims,
-                                                 _layer_depth = _L_DEPTH,
-                                                 _all_2_all = True,
-                                                 _uniform_warm_start = True).to(self.device)
+                    latent_vectors = sample_qcirc(params=self._THETA_INIT,
+                                                  _nr_samples=dataloader.batch_size,
+                                                  _nr_qubits=self.latent_dims,
+                                                  _layer_depth=self._L_DEPTH,
+                                                  _all_2_all=True,
+                                                  _uniform_warm_start=True).to(self.device)
                     generated_images = self.generator.forward(latent_vectors)
 
                 # Loss with generated image inputs and fake_targets as labels
@@ -130,12 +126,12 @@ class GenerativeAdversarialNetwork(torch.nn.Module):
 
                 # Generate images in train mode
                 self.generator.train()
-                latent_vectors = sample_qcirc(params = _THETA_INIT,
-                                              _nr_samples = dataloader.batch_size,
-                                              _nr_qubits  = self.latent_dims,
-                                              _layer_depth = _L_DEPTH,
-                                              _all_2_all = True,
-                                              _uniform_warm_start = True).to(self.device)
+                latent_vectors = sample_qcirc(params=self._THETA_INIT,
+                                              _nr_samples=dataloader.batch_size,
+                                              _nr_qubits=self.latent_dims,
+                                              _layer_depth=self._L_DEPTH,
+                                              _all_2_all=True,
+                                              _uniform_warm_start=True).to(self.device)
                 generated_images = self.generator.forward(latent_vectors)
 
                 # Loss with generated image inputs and real_targets as labels
@@ -158,10 +154,10 @@ class GenerativeAdversarialNetwork(torch.nn.Module):
                 if avg_g_loss < 0.005 or avg_d_loss < 0.005:
                     print(f"Discriminator loss: {avg_d_loss}, or Generator loss: {avg_g_loss} is to low - breaking.")
                     wandb.alert(
-                            title="Low accuracy",
-                            text=f"Discriminator loss: {avg_d_loss}, or Generator loss: {avg_g_loss} is to low.",
-                            level=wandb.AlertLevel.WARN
-                        )
+                        title="Low accuracy",
+                        text=f"Discriminator loss: {avg_d_loss}, or Generator loss: {avg_g_loss} is to low.",
+                        level=wandb.AlertLevel.WARN
+                    )
                     break
                 disc_losses.append(avg_d_loss)
                 gen_losses.append(avg_g_loss)
@@ -175,14 +171,14 @@ class GenerativeAdversarialNetwork(torch.nn.Module):
                 if save_images:
                     if (epoch + 1) % 1 == 0:
                         self.generator.eval()
-                        
-                        latent_vectors = sample_qcirc(params = _THETA_INIT,
-                                                 _nr_samples = dataloader.batch_size,
-                                                 _nr_qubits  = self.latent_dims,
-                                                 _layer_depth = _L_DEPTH,
-                                                 _all_2_all = True,
-                                                 _uniform_warm_start = True).to(self.device)
-                        
+
+                        latent_vectors = sample_qcirc(params=self._THETA_INIT,
+                                                      _nr_samples=dataloader.batch_size,
+                                                      _nr_qubits=self.latent_dims,
+                                                      _layer_depth=self._L_DEPTH,
+                                                      _all_2_all=True,
+                                                      _uniform_warm_start=True).to(self.device)
+
                         generated_image_arrays = self.generator.forward(latent_vectors)
                         self.save_image_grid(epoch, generated_image_arrays, ncol=int(np.sqrt(nr_images)))
                         if use_wandb:
@@ -191,12 +187,12 @@ class GenerativeAdversarialNetwork(torch.nn.Module):
                     if use_wandb:
                         if (epoch + 1) % 1 == 0:
                             self.generator.eval()
-                            latent_vectors = sample_qcirc(params = _THETA_INIT,
-                                                 _nr_samples = dataloader.batch_size,
-                                                 _nr_qubits  = self.latent_dims,
-                                                 _layer_depth = _L_DEPTH,
-                                                 _all_2_all = True,
-                                                 _uniform_warm_start = True).to(self.device)
+                            latent_vectors = sample_qcirc(params=self._THETA_INIT,
+                                                          _nr_samples=dataloader.batch_size,
+                                                          _nr_qubits=self.latent_dims,
+                                                          _layer_depth=self._L_DEPTH,
+                                                          _all_2_all=True,
+                                                          _uniform_warm_start=True).to(self.device)
                             generated_image_arrays = self.generator.forward(latent_vectors)
                             self.save_image_grid(epoch, generated_image_arrays,
                                                  ncol=int(np.sqrt(nr_images)))
