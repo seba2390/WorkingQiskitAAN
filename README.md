@@ -5,7 +5,7 @@ The network implements a Quantum Circuit Born Machine (QCBM) to learn the distri
 ### Main points.
 - The Quantum circuit is simulated using the 'Aer-simulator' in Qiskits framework.
 - The optimal parameters of the QC was determined at each epoch using the gradient-free optimizing strategy known as 'COBYLA'.
-- The Discriminator and the Generator networks are structured approximatly as each others inverses, and generally follows the standard approach of DCGAN as presented by [[2]](#2).
+- The Discriminator and the Generator networks are structured approximatly as each others inverses, and generally follows the standard approach of DCGAN as presented by [[1]](#1).
 - The optimal parameters of the Discriminator and the Generator was determined using the well-known 'Adam' optimizer using PyTorch.
 - The classical part of the GAN is written such that both forward- and backwardspass can be done on the CPU, or one the GPU (using CUDA), if available.
 
