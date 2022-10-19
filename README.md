@@ -10,7 +10,7 @@ The network implements a Quantum Circuit Born Machine (QCBM) to learn the distri
 - The classical part of the GAN is written such that both forward- and backwardspass can be done on the CPU, or one the GPU (using CUDA), if available.
 
 ##### Result w. digits 3,7,9
-![alt text](https://github.com/seba2390/WorkingQiskitAAN/blob/main/379.gif "Logo Title Text 1")
+![alt text](https://github.com/seba2390/WorkingQiskitAAN/blob/main/media/379.gif "Logo Title Text 1")
 
 The general strategy of this work is inspired by [[2]](#2), and details regarding the structure of the quantum circuit can therefore also be found in their paper, avalaible on arXiv [Generation of High-Resolution Handwritten Digits with an Ion-Trap Quantum Computer](https://arxiv.org/pdf/2012.03924.pdf).<br>
 
