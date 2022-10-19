@@ -137,3 +137,6 @@ dmypy.json
 # wandb
 /wandb
 
+# div.
+.idea/
+
