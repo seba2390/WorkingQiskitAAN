@@ -17,21 +17,21 @@ class Discriminator(torch.nn.Module):
         self.conv1 = torch.nn.Sequential(
             torch.nn.Conv2d(in_channels=1, out_channels=32, kernel_size=(5, 5),
                             stride=(2, 2), padding=(2, 2), bias=False),
-            torch.nn.LeakyReLU(negative_slope=0.01)
+            torch.nn.LeakyReLU(negative_slope=0.2)
         )
 
         # 32 x 14 x 14 => 64 x 7 x 7
         self.conv2 = torch.nn.Sequential(
             torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(5, 5),
                             stride=(2, 2), padding=(2, 2), bias=False),
-            torch.nn.LeakyReLU(negative_slope=0.01)
+            torch.nn.LeakyReLU(negative_slope=0.2)
         )
 
         # 64 x 7 x 7 => 11 x 3 x 3
         self.conv3 = torch.nn.Sequential(
             torch.nn.Conv2d(in_channels=64, out_channels=11, kernel_size=(5, 5),
                             stride=(2, 2), padding=(1, 1), bias=False),
-            torch.nn.LeakyReLU(negative_slope=0.01)
+            torch.nn.LeakyReLU(negative_slope=0.2)
         )
         # 11 x 3 x 3 => 11*3*3
         self.flatten = torch.nn.Flatten()
@@ -41,14 +41,14 @@ class Discriminator(torch.nn.Module):
             torch.nn.Linear(in_features=11*3*3,
                             out_features=self.latent_dim,
                             bias=False),
-            torch.nn.LeakyReLU(negative_slope=0.01),
+            torch.nn.LeakyReLU(negative_slope=0.2)
         )
 
         # latent size => 1
         self.fc2 = torch.nn.Sequential(
             torch.nn.Linear(in_features=self.latent_dim,
                             out_features=1),
-            torch.nn.LeakyReLU(negative_slope=0.01),
+            torch.nn.LeakyReLU(negative_slope=0.2)
         )
 
         self.to(self.device)

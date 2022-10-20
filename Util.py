@@ -32,3 +32,9 @@ def keep_numbers(numbers: list[int, ...], dataset) -> torch.Tensor:
                 keeps[data_point] = True
     return torch.tensor(keeps, dtype=None)
 
+
+def random_label_flip(labels: torch.Tensor,
+                      percentage: float = 0.03):
+    nr_flips = int(percentage*len(labels))
+    indices = torch.randint(low=0, high=len(labels), size=(nr_flips,))
+

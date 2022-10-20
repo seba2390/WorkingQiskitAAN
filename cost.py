@@ -127,3 +127,56 @@ def sample_qcirc(params: list[float, ...],
         for occurrences in range(measurements[state]):
             states.append(_state)
     return torch.tensor(states)
+
+
+def multibasis_sample_qcirc(params: list[float, ...],
+                            _nr_samples: int,
+                            _nr_qubits: int,
+                            _layer_depth: int = 2,
+                            _all_2_all: bool = True,
+                            _uniform_warm_start: bool = False) -> torch.Tensor:
+
+    """ Function that samples the Quantum circuit '_nr_samples' times,
+    given the params for the rotations gates in the Quantum circuit,
+    and concatenates a second measurement of same circuit rotated into
+    the orthogonal y-basis."""
+
+    backend = qiskit.Aer.get_backend('aer_simulator')
+
+    # Standard basis
+    q_circuit = ansatz(_theta=params,
+                       _nr_qubits=_nr_qubits,
+                       _layer_depth=_layer_depth,
+                       _all_2_all=_all_2_all,
+                       _uniform_warm_start=_uniform_warm_start)
+    transpiled_qpe = qiskit.transpile(q_circuit, backend)
+    assembled_qobj = qiskit.assemble(transpiled_qpe, shots=_nr_samples)
+    measurements = backend.run(assembled_qobj).result().get_counts()
+    standard_basis_states = []
+    for state in list(measurements.keys()):
+        _state = []
+        for _qbit in state:
+            _state.append(float(_qbit))
+        for occurrences in range(measurements[state]):
+            standard_basis_states.append(_state)
+    standard_basis_states = torch.tensor(standard_basis_states)
+
+    # Orthogonal basis
+    y_q_circuit = y_basis_ansatz(_theta=params,
+                                 _nr_qubits=_nr_qubits,
+                                 _layer_depth=_layer_depth,
+                                 _all_2_all=_all_2_all,
+                                 _uniform_warm_start=_uniform_warm_start)
+    y_transpiled_qpe = qiskit.transpile(y_q_circuit, backend)
+    y_assembled_qobj = qiskit.assemble(y_transpiled_qpe, shots=_nr_samples)
+    y_measurements = backend.run(y_assembled_qobj).result().get_counts()
+    y_basis_states = []
+    for state in list(y_measurements.keys()):
+        _state = []
+        for _qbit in state:
+            _state.append(float(_qbit))
+        for occurrences in range(y_measurements[state]):
+            y_basis_states.append(_state)
+    y_basis_states = torch.tensor(y_basis_states)
+
+    return torch.cat((standard_basis_states, y_basis_states), dim=1)

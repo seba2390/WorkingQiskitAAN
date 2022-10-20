@@ -13,12 +13,16 @@ from cost import *
 
 
 class GenerativeAdversarialNetwork(torch.nn.Module):
-    def __init__(self, latent_size: int = 35):
+    def __init__(self, latent_size: int = 35,
+                 use_multibasis: bool = False):
         super(GenerativeAdversarialNetwork, self).__init__()
 
         # torch.manual_seed(0)  # For reproducibility
 
+        self.USE_MULTIBASIS = use_multibasis
         self.latent_dims = latent_size
+        if self.USE_MULTIBASIS:
+            self.latent_dims *= 2
         self.image_dims = (28, 28)
 
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -31,6 +35,8 @@ class GenerativeAdversarialNetwork(torch.nn.Module):
         self.generator.to(self.device)
 
         self._N_QUBITS = self.latent_dims
+        if self.USE_MULTIBASIS:
+            self._N_QUBITS = int(self._N_QUBITS/2)
         self._L_DEPTH = 2
         self._NR_SHOTS = 2000
         self._ALL_2_ALL = True
@@ -103,12 +109,20 @@ class GenerativeAdversarialNetwork(torch.nn.Module):
                 # Generate images in eval mode
                 self.generator.eval()
                 with torch.no_grad():
-                    latent_vectors = sample_qcirc(params=self._THETA_INIT,
-                                                  _nr_samples=dataloader.batch_size,
-                                                  _nr_qubits=self.latent_dims,
-                                                  _layer_depth=self._L_DEPTH,
-                                                  _all_2_all=True,
-                                                  _uniform_warm_start=True).to(self.device)
+                    if self.USE_MULTIBASIS:
+                        latent_vectors = multibasis_sample_qcirc(params=self._THETA_INIT,
+                                                                 _nr_samples=dataloader.batch_size,
+                                                                 _nr_qubits=self._N_QUBITS,
+                                                                 _layer_depth=self._L_DEPTH,
+                                                                 _all_2_all=True,
+                                                                _uniform_warm_start=True).to(self.device)
+                    else:
+                        latent_vectors = sample_qcirc(params=self._THETA_INIT,
+                                                      _nr_samples=dataloader.batch_size,
+                                                      _nr_qubits=self._N_QUBITS,
+                                                      _layer_depth=self._L_DEPTH,
+                                                      _all_2_all=True,
+                                                      _uniform_warm_start=True).to(self.device)
                     generated_images = self.generator.forward(latent_vectors)
 
                 # Loss with generated image inputs and fake_targets as labels
@@ -126,12 +140,20 @@ class GenerativeAdversarialNetwork(torch.nn.Module):
 
                 # Generate images in train mode
                 self.generator.train()
-                latent_vectors = sample_qcirc(params=self._THETA_INIT,
-                                              _nr_samples=dataloader.batch_size,
-                                              _nr_qubits=self.latent_dims,
-                                              _layer_depth=self._L_DEPTH,
-                                              _all_2_all=True,
-                                              _uniform_warm_start=True).to(self.device)
+                if self.USE_MULTIBASIS:
+                    latent_vectors = multibasis_sample_qcirc(params=self._THETA_INIT,
+                                                             _nr_samples=dataloader.batch_size,
+                                                             _nr_qubits=self._N_QUBITS,
+                                                             _layer_depth=self._L_DEPTH,
+                                                             _all_2_all=True,
+                                                             _uniform_warm_start=True).to(self.device)
+                else:
+                    latent_vectors = sample_qcirc(params=self._THETA_INIT,
+                                                  _nr_samples=dataloader.batch_size,
+                                                  _nr_qubits=self._N_QUBITS,
+                                                  _layer_depth=self._L_DEPTH,
+                                                  _all_2_all=True,
+                                                  _uniform_warm_start=True).to(self.device)
                 generated_images = self.generator.forward(latent_vectors)
 
                 # Loss with generated image inputs and real_targets as labels
@@ -172,14 +194,23 @@ class GenerativeAdversarialNetwork(torch.nn.Module):
                     if (epoch + 1) % 1 == 0:
                         self.generator.eval()
 
-                        latent_vectors = sample_qcirc(params=self._THETA_INIT,
-                                                      _nr_samples=nr_images,
-                                                      _nr_qubits=self.latent_dims,
-                                                      _layer_depth=self._L_DEPTH,
-                                                      _all_2_all=True,
-                                                      _uniform_warm_start=True).to(self.device)
+                        if self.USE_MULTIBASIS:
+                            latent_vectors = multibasis_sample_qcirc(params=self._THETA_INIT,
+                                                                     _nr_samples=nr_images,
+                                                                     _nr_qubits=self._N_QUBITS,
+                                                                     _layer_depth=self._L_DEPTH,
+                                                                     _all_2_all=True,
+                                                                     _uniform_warm_start=True).to(self.device)
+                        else:
+                            latent_vectors = sample_qcirc(params=self._THETA_INIT,
+                                                          _nr_samples=nr_images,
+                                                          _nr_qubits=self._N_QUBITS,
+                                                          _layer_depth=self._L_DEPTH,
+                                                          _all_2_all=True,
+                                                          _uniform_warm_start=True).to(self.device)
 
                         generated_image_arrays = self.generator.forward(latent_vectors)
+
                         self.save_image_grid(epoch, generated_image_arrays, ncol=int(np.sqrt(nr_images)))
                         if use_wandb:
                             wandb.log({"Generator examples": wandb.Image(f'progress_pics/image_{epoch}.jpg')})
@@ -187,13 +218,23 @@ class GenerativeAdversarialNetwork(torch.nn.Module):
                     if use_wandb:
                         if (epoch + 1) % 1 == 0:
                             self.generator.eval()
-                            latent_vectors = sample_qcirc(params=self._THETA_INIT,
-                                                          _nr_samples=nr_images,
-                                                          _nr_qubits=self.latent_dims,
-                                                          _layer_depth=self._L_DEPTH,
-                                                          _all_2_all=True,
-                                                          _uniform_warm_start=True).to(self.device)
+
+                            if self.USE_MULTIBASIS:
+                                latent_vectors = multibasis_sample_qcirc(params=self._THETA_INIT,
+                                                                         _nr_samples=nr_images,
+                                                                         _nr_qubits=self._N_QUBITS,
+                                                                         _layer_depth=self._L_DEPTH,
+                                                                         _all_2_all=True,
+                                                                         _uniform_warm_start=True).to(self.device)
+                            else:
+                                latent_vectors = sample_qcirc(params=self._THETA_INIT,
+                                                              _nr_samples=nr_images,
+                                                              _nr_qubits=self._N_QUBITS,
+                                                              _layer_depth=self._L_DEPTH,
+                                                              _all_2_all=True,
+                                                              _uniform_warm_start=True).to(self.device)
                             generated_image_arrays = self.generator.forward(latent_vectors)
+
                             self.save_image_grid(epoch, generated_image_arrays,
                                                  ncol=int(np.sqrt(nr_images)))
                             wandb.log({"Generator examples": wandb.Image(f'progress_pics/image_{epoch}.jpg')})

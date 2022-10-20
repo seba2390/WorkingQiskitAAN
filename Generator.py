@@ -20,7 +20,7 @@ class Generator(torch.nn.Module):
             torch.nn.Linear(in_features=latent_dims,
                             out_features=11*3*3),
             torch.nn.BatchNorm1d(num_features=11*3*3),
-            torch.nn.LeakyReLU(negative_slope=0.01))
+            torch.nn.LeakyReLU(negative_slope=0.2))
 
         # 11*3*3  => 11 x 3 x 3
         self.reshape = Reshape(11, 3, 3)
@@ -30,7 +30,7 @@ class Generator(torch.nn.Module):
             torch.nn.ConvTranspose2d(in_channels=11, out_channels=64, kernel_size=(5, 5),
                                      stride=(2, 2), padding=(1, 1), bias=False),
             torch.nn.BatchNorm2d(num_features=64),
-            torch.nn.LeakyReLU(negative_slope=0.01)
+            torch.nn.LeakyReLU(negative_slope=0.2)
         )
 
         # 64 x 7 x 7 => 32 x 14 x 14
@@ -38,7 +38,7 @@ class Generator(torch.nn.Module):
             torch.nn.ConvTranspose2d(in_channels=64, out_channels=32, kernel_size=(6, 6),
                                      stride=(2, 2), padding=(2, 2), bias=False),
             torch.nn.BatchNorm2d(num_features=32),
-            torch.nn.LeakyReLU(negative_slope=0.01)
+            torch.nn.LeakyReLU(negative_slope=0.2)
         )
 
         # 32 x 14 x 14 => 1 x 28 x 28
